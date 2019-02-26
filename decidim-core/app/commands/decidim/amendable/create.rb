@@ -37,7 +37,9 @@ module Decidim
       attr_reader :form
 
       def emendation_doesnt_change_amendable
-        form.title == @amendable.title && form.body == @amendable.body
+        return unless form.title == @amendable.title && form.body == @amendable.body
+        @form.errors[:amendment] << "cannot be identical"
+        @form.errors[:body] << "cannot be identical"
       end
 
       def emendation_attributes
