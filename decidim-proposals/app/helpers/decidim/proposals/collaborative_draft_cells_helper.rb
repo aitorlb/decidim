@@ -41,6 +41,7 @@ module Decidim
       end
 
       def state_classes
+        return unless state
         [collaborative_draft_state_badge_css_class(state).to_s]
       end
     end

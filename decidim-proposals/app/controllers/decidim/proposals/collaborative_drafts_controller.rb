@@ -75,7 +75,7 @@ module Decidim
         @step = :step_2
         @similar_collaborative_drafts ||= Decidim::Proposals::SimilarCollaborativeDrafts
                                           .for(current_component, @collaborative_draft)
-                                          .all
+                                          .where.not(state: nil)
 
         if @similar_collaborative_drafts.blank?
           flash[:notice] = I18n.t("proposals.collaborative_drafts.compare.no_similars_found", scope: "decidim")
@@ -86,14 +86,8 @@ module Decidim
       def complete
         enforce_permission_to :create, :collaborative_draft
         @step = :step_3
-        if params[:collaborative_draft].present?
-          params[:collaborative_draft][:attachment] = form(AttachmentForm).from_params({})
-          @form = form(CollaborativeDraftForm).from_params(params)
-        else
-          @form = form(CollaborativeDraftForm).from_params(
-            attachment: form(AttachmentForm).from_params({})
-          )
-        end
+        @form = form(CollaborativeDraftForm).from_model(@collaborative_draft)
+        @form.attachment = form(AttachmentForm).from_params({})
       end
 
 

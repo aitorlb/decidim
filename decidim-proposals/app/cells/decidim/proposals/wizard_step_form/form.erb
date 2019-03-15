@@ -1,22 +1,44 @@
-          <%= decidim_form_for(model) do |form| %>
-          <div class="field hashtags__container">
-            <%= form.text_field :title, class: "js-hashtags", hashtaggable: true %>
+<div class="card">
+  <div class="card__content">
+    <%= decidim_form_for(model) do |form| %>
+    <div class="field hashtags__container">
+      <%= form.text_field :title, class: "js-hashtags", hashtaggable: true %>
+    </div>
+    <div class="field hashtags__container">
+      <%= form.text_area :body, rows: 10, class: "js-hashtags", hashtaggable: true %>
+    </div>
+    <% if model_name(:singular) == :proposal %>
+    <% if current_organization.user_groups_enabled? && Decidim::UserGroups::ManageableUserGroups.for(current_user).verified.any? %>
+    <div class="field">
+      <%= user_group_select_field form, :user_group_id %>
+    </div>
+    <% end %>
+    <% end %>
+    <% if component_settings.attachments_allowed? && step?(:step_3) && false %>
+      <fieldset>
+        <legend><%= t("attachment_legend", scope: "decidim.proposals.proposals.edit") %></legend>
+        <%= form.fields_for :attachment, @form.attachment do |nested_form| %>
+          <div class="field">
+            <%= nested_form.text_field :title %>
           </div>
 
-          <div class="field hashtags__container">
-            <%= form.text_area :body, rows: 10, class: "js-hashtags", hashtaggable: true %>
-          </div>
-
-          <% if model_name.singular == :proposal %>
-          <% if current_organization.user_groups_enabled? && Decidim::UserGroups::ManageableUserGroups.for(current_user).verified.any? %>
-            <div class="field">
-              <%= user_group_select_field form, :user_group_id %>
-            </div>
-          <% end %>
-          <% end %>
-
-
-          <div class="actions">
-            <%= form.submit submit_text, class: "button expanded mt-s mb-none", data: { disable: true } %>
+          <div class="field">
+            <%= nested_form.upload :file, optional: false %>
+            <% if @form.errors[:attachment].present? %>
+              <% @form.errors[:attachment].each do |message| %>
+                <small class="form-error is-visible">
+                  <%= message %>
+                </small>
+              <% end %>
+            <% end %>
           </div>
         <% end %>
+      </fieldset>
+    <% end %>
+    <div class="actions">
+      <%= form.submit submit_text, class: "button expanded mt-s mb-none",
+      data: { disable: true } %>
+    </div>
+    <% end %>
+  </div>
+</div>

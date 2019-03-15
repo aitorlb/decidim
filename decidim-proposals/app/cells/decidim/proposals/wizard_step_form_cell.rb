@@ -15,10 +15,6 @@ module Decidim
         render
       end
 
-      def form
-        render
-      end
-
       private
 
       def title
@@ -29,8 +25,9 @@ module Decidim
         presenter.body
       end
 
-      def model_name
-        model.model_name
+      def model_name(singular = false)
+        return model.model_name.singular_route_key if singular
+        model.model_name.route_key
       end
 
       def similar_resources
@@ -41,11 +38,11 @@ module Decidim
         action = params[:action].to_sym
         url = case action
               when :new, :compare
-                send("#{model_name.plural}_path")
+                send("#{model_name}_path")
               when :complete
-                send("complete_#{model_name.singular}_path")
+                send("complete_#{model_name(:singular)}_path")
               when :preview
-                send("preview_#{model_name.singular}_path")
+                send("preview_#{model_name(:singular)}_path")
               end
         icon("chevron-left", class: "icon--small")
         link_to url do
@@ -57,14 +54,14 @@ module Decidim
 
       # Returns different text for step_2: compare
       def wizard_aside_back_text(_step_2 = false)
-        scope = "decidim.proposals.#{model_name.plural}.wizard_aside"
+        scope = "decidim.proposals.#{model_name}.wizard_aside"
         # return t("exit", scope: scope).html_safe if step_2
 
         t("back", scope: scope)
       end
 
       def wizard_aside_info_text
-        t("wizard_aside.info", scope: "decidim.proposals.#{model_name.plural}")
+        t("wizard_aside.info", scope: "decidim.proposals.#{model_name}")
       end
 
       def presenter
@@ -123,14 +120,14 @@ module Decidim
                        action
                      end
 
-        t("decidim.proposals.#{model_name.plural}.#{step_title}.title")
+        t("decidim.proposals.#{model_name}.#{step_title}.title")
       end
 
       # Returns the name of the step, translated
       #
       # step - A symbol of the target step
       def proposal_wizard_step_name(step)
-        t("decidim.proposals.#{model_name.plural}.wizard_steps.#{step}")
+        t("decidim.proposals.#{model_name}.wizard_steps.#{step}")
       end
 
       # Returns the css classes used for the proposal wizard for the desired step
@@ -174,12 +171,11 @@ module Decidim
         locals = {}
         help_text = component_settings.try("proposal_wizard_#{current_step}_help_text")
         if translated_attribute(help_text).present?
-          locals[:announcement] =  help_text
-          locals[:callout_class] = nil
+          locals[:announcement] = help_text
+          locals[:callout_class] = step?(:step_2) ? "warning" : nil
         end
         locals
       end
-
 
       def submit_text
         t("decidim.proposals.collaborative_drafts.new.send")
