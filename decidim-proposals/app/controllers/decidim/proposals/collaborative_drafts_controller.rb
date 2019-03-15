@@ -19,7 +19,7 @@ module Decidim
       helper_method :geocoded_collaborative_draft, :collaborative_draft
       before_action :collaborative_drafts_enabled?
       before_action :authenticate_user!, only: [:new, :create, :complete]
-      before_action :retrieve_collaborative_draft, only: [:show, :edit, :update, :withdraw, :publish]
+      before_action :retrieve_collaborative_draft
 
       def index
         @collaborative_drafts = search
@@ -40,25 +40,46 @@ module Decidim
         @reject_request_form = form(RejectAccessToCollaborativeDraftForm).from_params({})
       end
 
+      # Controller actions related to WizardCreateStepForm
       def new
         enforce_permission_to :create, :collaborative_draft
         @step = :step_1
 
-        @form = form(CollaborativeDraftForm).from_params(
-          attachment: form(AttachmentForm).from_params({})
-        )
+        if @collaborative_draft.present?
+          redirect_to complete_collaborative_draft_path(@collaborative_draft)
+        else
+          @form = form(CollaborativeDraftForm).from_params({})
+        end
+      end
+
+      def create
+        enforce_permission_to :create, :collaborative_draft
+        @step = :step_2
+        @form = form(CollaborativeDraftForm).from_params(params)
+
+        CreateCollaborativeDraft.call(@form, current_user) do
+          on(:ok) do |collaborative_draft|
+            flash[:notice] = I18n.t("proposals.collaborative_drafts.create.success", scope: "decidim")
+
+            redirect_to compare_collaborative_draft_path(collaborative_draft)
+          end
+
+          on(:invalid) do
+            flash.now[:alert] = I18n.t("proposals.collaborative_drafts.create.error", scope: "decidim")
+            render :new
+          end
+        end
       end
 
       def compare
         @step = :step_2
         @similar_collaborative_drafts ||= Decidim::Proposals::SimilarCollaborativeDrafts
-                                          .for(current_component, params[:collaborative_draft])
+                                          .for(current_component, @collaborative_draft)
                                           .all
-        @form = form(CollaborativeDraftForm).from_params(params)
 
         if @similar_collaborative_drafts.blank?
           flash[:notice] = I18n.t("proposals.collaborative_drafts.compare.no_similars_found", scope: "decidim")
-          redirect_to complete_collaborative_drafts_path(collaborative_draft: { title: @form.title, body: @form.body })
+          redirect_to complete_collaborative_drafts_path(@collaborative_draft)
         end
       end
 
@@ -75,24 +96,7 @@ module Decidim
         end
       end
 
-      def create
-        enforce_permission_to :create, :collaborative_draft
-        @step = :step_3
-        @form = form(CollaborativeDraftForm).from_params(params)
 
-        CreateCollaborativeDraft.call(@form, current_user) do
-          on(:ok) do |collaborative_draft|
-            flash[:notice] = I18n.t("proposals.collaborative_drafts.create.success", scope: "decidim")
-
-            redirect_to Decidim::ResourceLocatorPresenter.new(collaborative_draft).path
-          end
-
-          on(:invalid) do
-            flash.now[:alert] = I18n.t("proposals.collaborative_drafts.create.error", scope: "decidim")
-            render :complete
-          end
-        end
-      end
 
       def edit
         enforce_permission_to :edit, :collaborative_draft, collaborative_draft: @collaborative_draft

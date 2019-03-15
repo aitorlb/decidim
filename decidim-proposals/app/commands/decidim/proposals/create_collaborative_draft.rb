@@ -4,7 +4,6 @@ module Decidim
   module Proposals
     # A command with all the business logic when a user creates a new collaborative draft.
     class CreateCollaborativeDraft < Rectify::Command
-      include AttachmentMethods
       include HashtagsMethods
 
       # Public: Initializes the command.
@@ -14,7 +13,6 @@ module Decidim
       def initialize(form, current_user)
         @form = form
         @current_user = current_user
-        @attached_to = nil
       end
 
       # Executes the command. Broadcasts these events:
@@ -26,14 +24,8 @@ module Decidim
       def call
         return broadcast(:invalid) if form.invalid?
 
-        if process_attachments?
-          build_attachment
-          return broadcast(:invalid) if attachment_invalid?
-        end
-
         transaction do
           create_collaborative_draft
-          create_attachment if process_attachments?
         end
 
         broadcast(:ok, collaborative_draft)
@@ -41,7 +33,7 @@ module Decidim
 
       private
 
-      attr_reader :form, :collaborative_draft, :attachment
+      attr_reader :form, :collaborative_draft
 
       def create_collaborative_draft
         @collaborative_draft = Decidim.traceability.perform_action!(
@@ -59,14 +51,11 @@ module Decidim
             address: form.address,
             latitude: form.latitude,
             longitude: form.longitude,
-            state: "open"
           )
           draft.coauthorships.build(author: @current_user, user_group: @form.user_group)
           draft.save!
           draft
         end
-
-        @attached_to = @collaborative_draft
       end
 
       def user_group

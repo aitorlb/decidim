@@ -29,8 +29,8 @@ module Decidim
           .where(component: @component)
           .where(
             "GREATEST(#{title_similarity}, #{body_similarity}) >= ?",
-            @collaborative_draft[:title],
-            @collaborative_draft[:body],
+            @collaborative_draft.title,
+            @collaborative_draft.body,
             Decidim::Proposals.similarity_threshold
           )
           .limit(Decidim::Proposals.similarity_limit)

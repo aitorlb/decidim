@@ -4,7 +4,6 @@ module Decidim
   module Proposals
     # A command with all the business logic when a user creates a new proposal.
     class CreateProposal < Rectify::Command
-      include AttachmentMethods
       include HashtagsMethods
 
       # Public: Initializes the command.
@@ -41,7 +40,7 @@ module Decidim
 
       private
 
-      attr_reader :form, :proposal, :attachment
+      attr_reader :form, :proposal
 
       # Prevent PaperTrail from creating an additional version
       # in the proposal multi-step creation process (step 1: create)

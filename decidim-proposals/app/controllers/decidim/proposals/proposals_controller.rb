@@ -41,7 +41,6 @@ module Decidim
         CreateProposal.call(@form, current_user) do
           on(:ok) do |proposal|
             flash[:notice] = I18n.t("proposals.create.success", scope: "decidim")
-
             redirect_to compare_proposal_path(proposal)
           end
 

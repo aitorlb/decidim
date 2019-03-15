@@ -138,27 +138,25 @@ module Decidim
       def wizard_aside_link_to_back(options = {})
         singular = type_of == :proposals
 
-        case action_name.to_sym
-        when :new
-          url = send("#{type_of}_path")
-        when :compare
-          url = nil
-        when :complete
-          url = send("compare_#{type_of(singular)}_path", options)
-        when :preview
-          url = send("complete_#{type_of(singular)}_path", options)
-        end
+        url = case action_name.to_sym
+              when :new, :compare
+                send("#{type_of}_path")
+              when :complete, :preview
+                send("compare_#{type_of(singular)}_path", options)
+              end
 
-        if url
-          link_to url do
-            concat icon("chevron-left", class: "icon--small")
-            concat wizard_aside_back_text
-          end
+        link_to url do
+          concat icon("chevron-left", class: "icon--small")
+          concat wizard_aside_back_text(action_name.to_sym == :compare)
         end
       end
 
-      def wizard_aside_back_text
-        t("wizard_aside.back", scope: "decidim.proposals.#{type_of}").html_safe
+      # Returns different text for step_2: compare
+      def wizard_aside_back_text(step_2 = false)
+        scope = "decidim.proposals.#{type_of}.wizard_aside"
+        return t("exit", scope: scope).html_safe if step_2
+
+        t("back", scope: scope).html_safe
       end
 
       # Returns the resource name
