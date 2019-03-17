@@ -1,0 +1,14 @@
+<%= cell(Decidim::AnnouncementCell, announcement) %>
+<div class="proposal_wizard_help_text">
+  <%= cell(Decidim::AnnouncementCell, help_text) %>
+</div>
+<h2 class="section-heading">
+  <%= proposal_wizard_step_title %>
+  <%= "(#{similar_resources.count})" if step?(2) %>
+</h2>
+<div class="hide-for-large m-bottom">
+  <%= proposal_wizard_current_step %>
+  <ol id="steps" class="wizard__steps steps-toggle is-hidden" data-toggler=".is-hidden">
+    <%= proposal_wizard_stepper %>
+  </ol>
+</div>

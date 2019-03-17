@@ -225,7 +225,11 @@ module Decidim
       scopes = selected_scopes(attribute).map { |scope| [scope, yield(scope)] }
       template = ""
       template += label(attribute, label_for(attribute) + required_for_attribute(attribute)) unless options[:label] == false
-      template += @template.render("decidim/scopes/scopes_picker_input", picker_options: picker_options, prompt_params: prompt_params, scopes: scopes)
+      template += @template.render(partial: "decidim/scopes/scopes_picker_input",
+                                   formats: [:html],
+                                   locals: { picker_options: picker_options,
+                                             prompt_params: prompt_params,
+                                             scopes: scopes })
       template += error_and_help_text(attribute, options)
       template.html_safe
     end

@@ -1,0 +1,18 @@
+<div class="columns large-3">
+  <% unless step?(2) %>
+    <div class="m-bottom">
+      <%= link_to wizard_aside_back_url do %>
+        <%= icon "chevron-left", class: "icon--small" %>
+        <%= wizard_aside_text("back") %>
+      <% end %>
+    </div>
+  <% end %>
+  <div class="section">
+    <p>
+      <%= wizard_aside_text("info") %>
+    </p>
+  </div>
+  <div class="show-for-large">
+    <%= wizard_stepper %>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<div class="card">
+  <div class="p-l">
+    <div class="row column view-header">
+      <h2 class="heading2">
+        <%= title(links: true) %>
+      </h2>
+      <% unless component_settings.participatory_texts_enabled? %>
+      	<%= cell(Decidim::CoauthorshipsCell, model) %>
+      <% end %>
+    </div>
+    <div class="row column">
+      <%= simple_format body(links: true) %>
+    </div>
+    <%= render :preview_attachments if model.attachments.any? %>
+		<div class="row column flex-center">
+      <%= link_to text("modify"), url_to(:complete) %>
+      <% if model_name == "proposals" %>
+         <%= button_to text("publish"), publish_proposal_path(model),
+         method: :post, class: "button button--nomargin small" %>
+      <% elsif model_name == "collaborative_drafts" %>
+         <%= button_to text("open"), open_collaborative_draft_path(model),
+         method: :post, class: "button button--nomargin small" %>
+      <% end %>
+    </div>
+  </div>
+</div>

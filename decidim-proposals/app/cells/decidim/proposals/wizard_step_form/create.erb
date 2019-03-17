@@ -1,0 +1,23 @@
+<div class="card">
+  <div class="card__content">
+    <%= decidim_form_for(model) do |form| %>
+      <div class="field hashtags__container">
+        <%= form.text_field :title, class: "js-hashtags", hashtaggable: true,
+            value: presenter.title %>
+      </div>
+      <div class="field hashtags__container">
+        <%= form.text_area :body, rows: 10, class: "js-hashtags",
+            hashtaggable: true, value: presenter.body(extras: false).strip %>
+      </div>
+      <% if user_groups? %>
+        <div class="field">
+          <%= user_group_select_field form, :user_group_id %>
+        </div>
+      <% end %>
+      <div class="actions">
+        <%= submit_tag text("send"),
+            class: "button expanded mt-s mb-none", data: { disable: true } %>
+      </div>
+    <% end %>
+  </div>
+</div>

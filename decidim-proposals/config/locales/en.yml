@@ -434,6 +434,9 @@ en:
           proposals: Proposals
       collaborative_drafts:
         collaborative_draft:
+          open:
+            error: There was a problem while opening the draft to collaboration.
+            success: The draft has been opened successfully to collaboration.
           publish:
             error: There was a problem publishing the collaborative draft.
             irreversible_action_modal:
@@ -456,7 +459,9 @@ en:
           no_similars_found: Well done! No similar collaborative drafts found
           title: Similar collaborative drafts
         complete:
-          send: Send
+          discard: Discard the collaborative draft
+          discard_confirmation: Are you sure you want to discard this collaborative draft?
+          send: Preview
           title: Complete your collaborative draft
         count:
           drafts_count:
@@ -465,6 +470,9 @@ en:
         create:
           error: There was a problem creating this collaborative drafts
           success: Collaborative draft successfully created.
+        destroy:
+          error: There was a problem deleting the collaborative draft.
+          success: Collaborative draft was successfully deleted.
         edit:
           attachment_legend: "(Optional) Add an attachment"
           back: Back
@@ -497,6 +505,10 @@ en:
           most_contributed: Most contributed
           random: Random
           recent: Recent
+        preview:
+          modify: Modify the collaborative draft
+          open: Open
+          title: Open this draft to collaboration
         requests:
           accepted_request:
             error: Could not be accepted as a collaborator, please try again later.

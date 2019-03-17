@@ -43,7 +43,7 @@ module Decidim
                      when "create"
                        "new"
                      when "update_draft"
-                       "edit_draft"
+                       "complete"
                      else
                        action_name
                      end
@@ -154,7 +154,7 @@ module Decidim
       # Returns different text for step_2: compare
       def wizard_aside_back_text(step_2 = false)
         scope = "decidim.proposals.#{type_of}.wizard_aside"
-        return t("exit", scope: scope).html_safe if step_2
+        # return t("exit", scope: scope).html_safe if step_2
 
         t("back", scope: scope).html_safe
       end

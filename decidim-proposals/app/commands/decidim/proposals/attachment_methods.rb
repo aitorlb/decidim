@@ -23,7 +23,7 @@ module Decidim
       end
 
       def attachment_present?
-        @form.attachment.file.present?
+        @form.attachment&.file.present?
       end
 
       def create_attachment

@@ -44,11 +44,13 @@ describe "Collaborative drafts", type: :system do
                  participatory_space: participatory_process)
         end
 
+        let(:draft) { create(:collaborative_draft, state: nil, users: [user], component: component) }
+
         context "when process is not related to any scope" do
           it "can be related to a scope" do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+            visit complete_collaborative_draft_path(component, draft)
 
-            within "form.new_collaborative_draft" do
+            within "form.edit_collaborative_draft" do
               expect(page).to have_content(/Scope/i)
             end
           end
@@ -58,18 +60,18 @@ describe "Collaborative drafts", type: :system do
           let(:participatory_process) { scoped_participatory_process }
 
           it "cannot be related to a scope" do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+            visit complete_collaborative_draft_path(component, draft)
 
-            within "form.new_collaborative_draft" do
+            within "form.edit_collaborative_draft" do
               expect(page).to have_no_content("Scope")
             end
           end
         end
 
         it "creates a new collaborative draft", :slow do
-          visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+          visit complete_collaborative_draft_path(component, draft)
 
-          within ".new_collaborative_draft" do
+          within ".edit_collaborative_draft" do
             fill_in :collaborative_draft_title, with: "More sidewalks and less roads"
             fill_in :collaborative_draft_body, with: "Cities need more people, not more cars"
             select translated(category.name), from: :collaborative_draft_category_id
@@ -77,6 +79,8 @@ describe "Collaborative drafts", type: :system do
 
             find("*[type=submit]").click
           end
+
+          click_button "Open"
 
           expect(page).to have_content("successfully")
           expect(page).to have_content("More sidewalks and less roads")
@@ -95,10 +99,12 @@ describe "Collaborative drafts", type: :system do
                    participatory_space: participatory_process)
           end
 
-          it "creates a new collaborative draft", :slow do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+          let(:draft) { create(:collaborative_draft, state: nil, users: [user], component: component) }
 
-            within ".new_collaborative_draft" do
+          it "creates a new collaborative draft", :slow do
+            visit complete_collaborative_draft_path(component, draft)
+
+            within ".edit_collaborative_draft" do
               check :collaborative_draft_has_address
               fill_in :collaborative_draft_title, with: "More sidewalks and less roads"
               fill_in :collaborative_draft_body, with: "Cities need more people, not more cars"
@@ -108,6 +114,8 @@ describe "Collaborative drafts", type: :system do
 
               find("*[type=submit]").click
             end
+
+            click_button "Open"
 
             expect(page).to have_content("successfully")
             expect(page).to have_content("More sidewalks and less roads")
@@ -130,17 +138,21 @@ describe "Collaborative drafts", type: :system do
                    participatory_space: participatory_process)
           end
 
+          let(:draft) { create(:collaborative_draft, state: nil, users: [user], component: component) }
+
           let(:component_automatic_hashtags) { "AutoHashtag1 AutoHashtag2" }
           let(:component_suggested_hashtags) { "SuggestedHashtag1 SuggestedHashtag2" }
 
           it "offers and save extra hashtags", :slow do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+            visit complete_collaborative_draft_path(component, draft)
 
-            within ".new_collaborative_draft" do
+            within ".edit_collaborative_draft" do
               check :collaborative_draft_suggested_hashtags_suggestedhashtag1
 
               find("*[type=submit]").click
             end
+
+            click_button "Open"
 
             expect(page).to have_content("successfully")
             expect(page).to have_content("#AutoHashtag1")
@@ -158,9 +170,9 @@ describe "Collaborative drafts", type: :system do
           end
 
           it "creates a new collaborative draft as a user group", :slow do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+            visit complete_collaborative_draft_path(component, draft)
 
-            within ".new_collaborative_draft" do
+            within ".edit_collaborative_draft" do
               fill_in :collaborative_draft_title, with: "More sidewalks and less roads"
               fill_in :collaborative_draft_body, with: "Cities need more people, not more cars"
               select translated(category.name), from: :collaborative_draft_category_id
@@ -169,6 +181,8 @@ describe "Collaborative drafts", type: :system do
 
               find("*[type=submit]").click
             end
+
+            click_button "Open"
 
             expect(page).to have_content("successfully")
             expect(page).to have_content("More sidewalks and less roads")
@@ -187,10 +201,12 @@ describe "Collaborative drafts", type: :system do
                      participatory_space: participatory_process)
             end
 
-            it "creates a new collaborative draft as a user group", :slow do
-              visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+            let(:draft) { create(:collaborative_draft, state: nil, users: [user], component: component) }
 
-              within ".new_collaborative_draft" do
+            it "creates a new collaborative draft as a user group", :slow do
+              visit complete_collaborative_draft_path(component, draft)
+
+              within ".edit_collaborative_draft" do
                 fill_in :collaborative_draft_title, with: "More sidewalks and less roads"
                 fill_in :collaborative_draft_body, with: "Cities need more people, not more cars"
                 check :collaborative_draft_has_address
@@ -201,6 +217,8 @@ describe "Collaborative drafts", type: :system do
 
                 find("*[type=submit]").click
               end
+
+              click_button "Open"
 
               expect(page).to have_content("successfully")
               expect(page).to have_content("More sidewalks and less roads")
@@ -243,16 +261,20 @@ describe "Collaborative drafts", type: :system do
                    participatory_space: participatory_process)
           end
 
-          it "creates a new collaborative draft with attachments" do
-            visit complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
+          let(:draft) { create(:collaborative_draft, state: nil, users: [user], component: component) }
 
-            within ".new_collaborative_draft" do
+          it "creates a new collaborative draft with attachments" do
+            visit complete_collaborative_draft_path(component, draft)
+
+            within ".edit_collaborative_draft" do
               fill_in :collaborative_draft_title, with: "Collaborative draft with attachments"
               fill_in :collaborative_draft_body, with: "This is my collaborative draft and I want to upload attachments."
               fill_in :collaborative_draft_attachment_title, with: "My attachment"
               attach_file :collaborative_draft_attachment_file, Decidim::Dev.asset("city.jpeg")
               find("*[type=submit]").click
             end
+
+            click_button "Open"
 
             expect(page).to have_content("successfully")
 
@@ -281,6 +303,6 @@ describe "Collaborative drafts", type: :system do
   end
 end
 
-def complete_collaborative_draft_path(component, collaborative_draft_title, collaborative_draft_body)
-  Decidim::EngineRouter.main_proxy(component).complete_collaborative_drafts_path(collaborative_draft: { title: collaborative_draft_title, body: collaborative_draft_body })
+def complete_collaborative_draft_path(component, collaborative_draft)
+  Decidim::EngineRouter.main_proxy(component).collaborative_draft_path(collaborative_draft) + "/complete"
 end

@@ -37,16 +37,25 @@ module Decidim
       end
 
         transaction do
+                    if collaborative_draft.state.nil?
+          update_closed_draft
+          else
           update_collaborative_draft
+        end
           create_attachment if process_attachments?
         end
-
         broadcast(:ok, collaborative_draft)
       end
 
       private
 
       attr_reader :form, :collaborative_draft, :current_user, :attachment
+
+      def update_closed_draft
+        @collaborative_draft.update!(attributes)
+        @collaborative_draft.coauthorships.clear
+        @collaborative_draft.add_coauthor(current_user, user_group: user_group)
+      end
 
       def update_collaborative_draft
         Decidim.traceability.update!(
@@ -67,6 +76,10 @@ module Decidim
           latitude: form.latitude,
           longitude: form.longitude
         }
+      end
+
+      def user_group
+        @user_group ||= Decidim::UserGroup.find_by(organization: current_user.organization, id: form.user_group_id)
       end
     end
   end

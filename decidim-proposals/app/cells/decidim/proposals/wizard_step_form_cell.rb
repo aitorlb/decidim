@@ -4,8 +4,7 @@ require "cell/partial"
 
 module Decidim
   module Proposals
-    # This cell renders the collaborative_draft card for an instance of a CollaborativeDraft
-    # the default size is the Medium Card (:m)
+    # This cell renders Wizard Step Form for Porposals/CollaborativeDrafts
     class WizardStepFormCell < Decidim::ViewModel
       include ProposalCellsHelper
       include CollaborativeDraftCellsHelper
@@ -17,12 +16,36 @@ module Decidim
 
       private
 
-      def title
-        presenter.title
+      def action
+        params[:action].to_sym
       end
 
-      def body
-        presenter.body
+      def current_step
+        @current_step = case action
+                        when :new, :create
+                          1
+                        when :compare
+                          2
+                        when :complete, :destroy, :destroy_draft, :update, :update_draft
+                          3
+                        when :preview
+                          4
+                        end
+      end
+
+      def current_step_title
+        @current_step_title = case action
+                              when :create
+                                :new
+                              when :update_draft, :update
+                                :complete
+                              else
+                                action
+                              end
+      end
+
+      def step?(step)
+        current_step == step
       end
 
       def model_name(singular = false)
@@ -30,131 +53,125 @@ module Decidim
         model.model_name.route_key
       end
 
+      def url_to(action)
+        url = case action
+              when :index
+                send("#{model_name}_path")
+              when :compare
+                send("compare_#{model_name(:singular)}_path")
+              when :complete
+                send("complete_#{model_name(:singular)}_path")
+              when :discard
+                send("#{model_name(:singular)}_path")
+              end
+        url
+      end
+
+      def presenter
+        @presenter ||= if step?(1) || step?(3)
+                         "Decidim::Proposals::#{model.model_name.name}Presenter".constantize.new(model)
+                       elsif step?(4)
+                         "#{model.model_name.name}Presenter".constantize.new(model)
+                       end
+      end
+
+      def text(key)
+        current_scope = "decidim.proposals.#{model_name}.#{current_step_title}"
+        t(key, scope: current_scope)
+      end
+
+      def title(options = {})
+        presenter.title(options)
+      end
+
+      def body(options = {})
+        presenter.body(options)
+      end
+
+      # COMPARE methods
       def similar_resources
         @options[:similar_resources]
       end
 
-      def wizard_aside_link_to_back
-        action = params[:action].to_sym
-        url = case action
-              when :new, :compare
-                send("#{model_name}_path")
-              when :complete
-                send("complete_#{model_name(:singular)}_path")
-              when :preview
-                send("preview_#{model_name(:singular)}_path")
-              end
-        icon("chevron-left", class: "icon--small")
-        link_to url do
-          out = icon("chevron-left", class: "icon--small")
-          out << wizard_aside_back_text(action == :compare)
+      # COMPLETE methods
+      def complete_form_options
+        return unless model_name == "proposals"
+        { url: update_draft_proposal_path(@options[:proposal]), method: :patch }
+      end
+
+      def user_groups?
+        model.current_organization.user_groups_enabled? && Decidim::UserGroups::ManageableUserGroups.for(current_user).verified.any?
+      end
+
+      def scopes?
+        return false unless model.current_participatory_space.has_subscopes?
+        _prefixes << "#{Rails.root}/../decidim-core/app/views" # rubocop:disable Rails/FilePath
+      end
+
+      # PREVIEW
+      def document
+        model.documents.first
+      end
+
+      def photo
+        model.photos.first
+      end
+
+      # WIZARD ASIDE methods
+      #
+      # Returns the list with all the steps, in html
+      def wizard_stepper
+        content_tag :ol, class: "wizard__steps" do
+          out = wizard_stepper_step(1)
+          out << wizard_stepper_step(2)
+          out << wizard_stepper_step(3)
+          out << wizard_stepper_step(4)
           out
         end
       end
 
-      # Returns different text for step_2: compare
-      def wizard_aside_back_text(_step_2 = false)
-        scope = "decidim.proposals.#{model_name}.wizard_aside"
-        # return t("exit", scope: scope).html_safe if step_2
-
-        t("back", scope: scope)
-      end
-
-      def wizard_aside_info_text
-        t("wizard_aside.info", scope: "decidim.proposals.#{model_name}")
-      end
-
-      def presenter
-        @presenter ||= "Decidim::Proposals::#{model_name.name}Presenter".constantize.new(model)
-      end
-
-      def current_step
-        @current_step = case action
-                        when :new
-                          :step_1
-                        when :compare
-                          :step_2
-                        when :complete
-                          :step_3
-                        when :preview
-                          :step_4
-                        end
-      end
-
-      def action
-        params[:action].to_sym
-      end
-
-      # Returns the list with all the steps, in html
-      #
-      # current_step - A symbol of the current step
-      def proposal_wizard_stepper
-        content_tag :ol, class: "wizard__steps" do
-          %(
-            #{proposal_wizard_stepper_step(:step_1)}
-            #{proposal_wizard_stepper_step(:step_2)}
-            #{proposal_wizard_stepper_step(:step_3)}
-            #{proposal_wizard_stepper_step(:step_4)}
-          ).html_safe
-        end
-      end
-
       # Returns the list item of the given step, in html
-      #
-      # step - A symbol of the target step
-      # current_step - A symbol of the current step
-      def proposal_wizard_stepper_step(step)
-        content_tag(:li, proposal_wizard_step_name(step), class: proposal_wizard_step_classes(step).to_s)
-      end
-
-      # Returns the page title of the given step, translated
-      #
-      # action_name - A string of the rendered action
-      def proposal_wizard_step_title
-        step_title = case action
-                     when "create"
-                       "new"
-                     when "update_draft"
-                       "edit_draft"
-                     else
-                       action
-                     end
-
-        t("decidim.proposals.#{model_name}.#{step_title}.title")
+      def wizard_stepper_step(step)
+        content_tag(:li, wizard_step_name(step), class: wizard_step_classes(step))
       end
 
       # Returns the name of the step, translated
-      #
-      # step - A symbol of the target step
-      def proposal_wizard_step_name(step)
-        t("decidim.proposals.#{model_name}.wizard_steps.#{step}")
+      def wizard_step_name(step)
+        t("decidim.proposals.#{model_name}.wizard_steps.step_#{step}")
       end
 
       # Returns the css classes used for the proposal wizard for the desired step
-      #
-      # step - A symbol of the target step
-      # current_step - A symbol of the current step
-      #
-      # Returns a string with the css classes for the desired step
-      def proposal_wizard_step_classes(step)
+      def wizard_step_classes(step)
         classes = if step?(step)
-                    %(step--active #{step} #{current_step})
-                  elsif step_to_i(step) < 4
-                    %(step--past #{step})
+                    %(step--active step_#{step})
+                  elsif step < current_step
+                    %(step--past step_#{step})
                   else
                     %()
                   end
         classes
       end
 
-      def step_to_i(step)
-        step.to_s.split("_").last.to_i
+      # Returns the url to the back link
+      def wizard_aside_back_url
+        url = case current_step
+              when 1
+                url_to(:index)
+              when 3
+                url_to(:compare)
+              when 4
+                url_to(:complete)
+              end
+        url
       end
 
-      def step?(step)
-        current_step == step
+      def wizard_aside_text(key)
+        scope = "decidim.proposals.#{model_name}.wizard_aside"
+
+        t(key, scope: scope)
       end
 
+      # WIZARD HEADER methods
       def announcement
         locals = {}
         if translated_attribute(component_settings.new_proposal_help_text).present? && !step?(:step_4)
@@ -177,23 +194,22 @@ module Decidim
         locals
       end
 
-      def submit_text
-        t("decidim.proposals.collaborative_drafts.new.send")
-      end
-
       # Returns a string with the current step number and the total steps number
-      #
-      # step - A symbol of the target step
       def proposal_wizard_current_step
         content_tag(:span, class: "text-small") do
           out = t(:"decidim.proposals.proposals.wizard_steps.step_of",
-                  current_step_num: step_to_i(current_step),
+                  current_step_num: current_step,
                   total_steps: 4)
-          out << " ("
-          out << content_tag(:a, t(:"decidim.proposals.proposals.wizard_steps.see_steps"), "data-toggle": "steps")
-          out << ")"
+          out << " (#{content_tag(:a,
+                                  t(:"decidim.proposals.proposals.wizard_steps.see_steps"),
+                                  "data-toggle": "steps")})"
           out
         end
+      end
+
+      # Returns the page title of the given step, translated
+      def proposal_wizard_step_title
+        t("decidim.proposals.#{model_name}.#{current_step_title}.title")
       end
     end
   end

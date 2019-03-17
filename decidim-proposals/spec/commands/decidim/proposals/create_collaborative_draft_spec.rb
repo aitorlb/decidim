@@ -151,35 +151,6 @@ module Decidim
               end
             end
           end
-
-          context "when attachments are allowed", processing_uploads_for: Decidim::AttachmentUploader do
-            let(:component) { create(:proposal_component, :with_attachments_allowed) }
-            let(:attachment_params) do
-              {
-                title: "My attachment",
-                file: Decidim::Dev.test_file("city.jpeg", "image/jpeg")
-              }
-            end
-
-            it "creates an atachment for the proposal" do
-              expect { command.call }.to change(Decidim::Attachment, :count).by(1)
-              last_collaborative_draft = Decidim::Proposals::CollaborativeDraft.last
-              last_attachment = Decidim::Attachment.last
-              expect(last_attachment.attached_to).to eq(last_collaborative_draft)
-            end
-
-            context "when attachment is left blank" do
-              let(:attachment_params) do
-                {
-                  title: ""
-                }
-              end
-
-              it "broadcasts ok" do
-                expect { command.call }.to broadcast(:ok)
-              end
-            end
-          end
         end
       end
     end

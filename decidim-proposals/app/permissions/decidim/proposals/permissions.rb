@@ -141,7 +141,7 @@ module Decidim
       end
 
       def can_edit_collaborative_draft?
-        return toggle_allow(false) unless collaborative_drafts_enabled? && collaborative_draft.open?
+        return toggle_allow(false) unless collaborative_drafts_enabled? && collaborative_draft.open? || collaborative_draft.state.nil?
         toggle_allow(collaborative_draft.editable_by?(user))
       end
 

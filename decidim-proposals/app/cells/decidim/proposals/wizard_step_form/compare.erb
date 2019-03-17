@@ -1,9 +1,9 @@
 <div class="row small-up-1 card-grid">
   <% similar_resources.each do |similar_resource| %>
-  <%= cell(Decidim::CardCell, similar_resource) %>
+  	<%= cell(Decidim::CardCell, similar_resource) %>
   <% end %>
 </div>
 <div class="row column text-center">
-  <%= link_to t("decidim.proposals.#{model_name}.compare.continue"), complete_collaborative_draft_path(model), class: "button small" %>
+  <%= link_to text("continue"), url_to(:complete), class: "button small" %>
 </div>
 

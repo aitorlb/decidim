@@ -112,7 +112,7 @@ module Decidim
     end
 
     def user_group_select_field(form, name)
-      selected = @form.user_group_id.presence
+      selected = form.object.user_group_id.presence
       form.select(
         name,
         current_user.user_groups.verified.map { |g| [g.name, g.id] },

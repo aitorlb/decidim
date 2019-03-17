@@ -16,32 +16,34 @@ module Decidim
       isolate_namespace Decidim::Proposals
 
       routes do
-        resources :proposals, except: [:destroy] do
-          resource :proposal_endorsement, only: [:create, :destroy] do
-            get :identities, on: :collection
-          end
+        resources :proposals do
           member do
             get :compare
             get :complete
             patch :update_draft
+            delete :destroy
             get :preview
             post :publish
-            delete :destroy_draft
             put :withdraw
           end
           resource :proposal_vote, only: [:create, :destroy]
           resource :proposal_widget, only: :show, path: "embed"
           resources :versions, only: [:show, :index]
+          resource :proposal_endorsement, only: [:create, :destroy] do
+            get :identities, on: :collection
+          end
         end
         resources :collaborative_drafts do
           member do
             get :compare
             get :complete
+            post :open
+            get :preview
+            post :publish
+            post :withdraw
             post :request_access, controller: "collaborative_draft_collaborator_requests"
             post :request_accept, controller: "collaborative_draft_collaborator_requests"
             post :request_reject, controller: "collaborative_draft_collaborator_requests"
-            post :withdraw
-            post :publish
           end
           resources :versions, only: [:show, :index]
         end

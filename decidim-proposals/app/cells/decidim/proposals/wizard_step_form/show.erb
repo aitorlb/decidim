@@ -1,37 +1,12 @@
 <div class="row">
-  <div class="columns large-3">
-    <div class="m-bottom">
-      <%= wizard_aside_link_to_back %>
-    </div>
-    <div class="section">
-      <p>
-        <%= wizard_aside_info_text %>
-      </p>
-    </div>
-    <div class="show-for-large">
-      <%= proposal_wizard_stepper %>
-    </div>
-  </div>
-
+  <%= render :wizard_aside %>
   <div class="columns large-6">
-    <%= cell(Decidim::AnnouncementCell, announcement) %>
-    <div class="proposal_wizard_help_text">
-    <%= cell(Decidim::AnnouncementCell, help_text) %>
-    </div>
-    <h2 class="section-heading">
-      <%= proposal_wizard_step_title %>
-      <%= "(#{similar_resources.count})" if similar_resources.present? %>
-    </h2>
-    <div class="hide-for-large m-bottom">
-      <%= proposal_wizard_current_step %>
-      <ol id="steps" class="wizard__steps steps-toggle is-hidden" data-toggler=".is-hidden">
-        <%= proposal_wizard_stepper %>
-      </ol>
-    </div>
-    <%= render :compare if step?(:step_2) %>
-    <%= render :form unless step?(:step_2)%>
+    <%= render :wizard_header %>
+    <%= render :create if step?(1) %>
+    <%= render :compare if step?(2) %>
+    <%= render :complete if step?(3) %>
+    <%= render :preview if step?(4) %>
   </div>
   <div class="columns large-3"></div>
 </div>
-
-<%= javascript_include_tag "decidim/proposals/add_proposal" %>
+<%= javascript_include_tag "decidim/proposals/add_proposal" if step?(1) || step?(3) %>

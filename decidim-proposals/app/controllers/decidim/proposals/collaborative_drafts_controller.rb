@@ -5,7 +5,7 @@ module Decidim
     # Exposes Collaborative Drafts resource so users can view and create them.
     class CollaborativeDraftsController < Decidim::Proposals::ApplicationController
       helper Decidim::WidgetUrlsHelper
-      helper ProposalWizardHelper
+      # helper ProposalWizardHelper
       helper TooltipHelper
 
       include Decidim::ApplicationHelper
@@ -19,7 +19,7 @@ module Decidim
       helper_method :geocoded_collaborative_draft, :collaborative_draft
       before_action :collaborative_drafts_enabled?
       before_action :authenticate_user!, only: [:new, :create, :complete]
-      before_action :retrieve_collaborative_draft
+      before_action :retrieve_collaborative_draft, except: [:new]
 
       def index
         @collaborative_drafts = search
@@ -27,6 +27,7 @@ module Decidim
                                 .not_hidden
                                 .includes(:category)
                                 .includes(:scope)
+                                .where.not(state: nil)
 
         @collaborative_drafts = paginate(@collaborative_drafts)
         @collaborative_drafts = reorder(@collaborative_drafts)
@@ -44,6 +45,10 @@ module Decidim
       def new
         enforce_permission_to :create, :collaborative_draft
         @step = :step_1
+        @collaborative_draft = CollaborativeDraft
+                               .from_all_author_identities(current_user)
+                               .not_hidden.where(component: current_component)
+                               .find_by(state: nil)
 
         if @collaborative_draft.present?
           redirect_to complete_collaborative_draft_path(@collaborative_draft)
@@ -59,13 +64,13 @@ module Decidim
 
         CreateCollaborativeDraft.call(@form, current_user) do
           on(:ok) do |collaborative_draft|
-            flash[:notice] = I18n.t("proposals.collaborative_drafts.create.success", scope: "decidim")
+            flash[:notice] = I18n.t("create.success", scope: "decidim.proposals.collaborative_drafts")
 
             redirect_to compare_collaborative_draft_path(collaborative_draft)
           end
 
           on(:invalid) do
-            flash.now[:alert] = I18n.t("proposals.collaborative_drafts.create.error", scope: "decidim")
+            flash.now[:alert] = I18n.t("create.error", scope: "decidim.proposals.collaborative_drafts")
             render :new
           end
         end
@@ -78,19 +83,17 @@ module Decidim
                                           .where.not(state: nil)
 
         if @similar_collaborative_drafts.blank?
-          flash[:notice] = I18n.t("proposals.collaborative_drafts.compare.no_similars_found", scope: "decidim")
-          redirect_to complete_collaborative_drafts_path(@collaborative_draft)
+          flash[:notice] = I18n.t("compare.no_similars_found", scope: "decidim.proposals.collaborative_drafts")
+          redirect_to complete_collaborative_draft_path(@collaborative_draft)
         end
       end
 
       def complete
-        enforce_permission_to :create, :collaborative_draft
+        enforce_permission_to :edit, :collaborative_draft, collaborative_draft: @collaborative_draft
         @step = :step_3
         @form = form(CollaborativeDraftForm).from_model(@collaborative_draft)
-        @form.attachment = form(AttachmentForm).from_params({})
+        @form.attachment = form(AttachmentForm).from_model(@collaborative_draft.attachments.first)
       end
-
-
 
       def edit
         enforce_permission_to :edit, :collaborative_draft, collaborative_draft: @collaborative_draft
@@ -105,16 +108,55 @@ module Decidim
         @form = form(CollaborativeDraftForm).from_params(params)
         UpdateCollaborativeDraft.call(@form, current_user, @collaborative_draft) do
           on(:ok) do |collaborative_draft|
-            flash[:notice] = I18n.t("proposals.collaborative_drafts.update.success", scope: "decidim")
+            flash[:notice] = I18n.t("update.success", scope: "decidim.proposals.collaborative_drafts")
+            if collaborative_draft.state.nil?
+              redirect_to preview_collaborative_draft_path(collaborative_draft) and return
+            end
             redirect_to Decidim::ResourceLocatorPresenter.new(collaborative_draft).path
           end
 
           on(:invalid) do
-            flash.now[:alert] = I18n.t("proposals.collaborative_drafts.update.error", scope: "decidim")
+            flash.now[:alert] = I18n.t("update.error", scope: "decidim.proposals.collaborative_drafts")
+            if collaborative_draft.state.nil?
+              render :complete and return
+            end
             render :edit
           end
         end
       end
+
+      def open
+        OpenCollaborativeDraft.call(@collaborative_draft, current_user) do
+          on(:ok) do
+            flash[:notice] = I18n.t("open.success", scope: "decidim.proposals.collaborative_drafts.collaborative_draft")
+            redirect_to collaborative_draft_path(@collaborative_draft)
+          end
+
+          on(:invalid) do
+            flash.now[:alert] = I18n.t("open.error", scope: "decidim.proposals.collaborative_drafts.collaborative_draft")
+            render :complete
+          end
+        end
+      end
+
+      def destroy
+        enforce_permission_to :edit, :collaborative_draft, collaborative_draft: @collaborative_draft
+        @step = :step_3
+
+        DestroyCollaborativeDraft.call(@collaborative_draft, current_user) do
+          on(:ok) do
+            flash[:notice] = I18n.t("destroy.success", scope: "decidim.proposals.collaborative_drafts")
+            redirect_to new_collaborative_draft_path
+          end
+
+          on(:invalid) do
+            flash[:alert] = I18n.t("destroy.error", scope: "decidim.proposals.collaborative_drafts")
+            redirect_to complete_collaborative_draft_path(@collaborative_draft)
+          end
+        end
+      end
+
+      def preview; end
 
       def withdraw
         WithdrawCollaborativeDraft.call(@collaborative_draft, current_user) do

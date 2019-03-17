@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe "Proposal", type: :system do
+describe "Collaborative draft", type: :system do
   include_context "with a component"
 
   let(:manifest_name) { "proposals" }
@@ -10,6 +10,8 @@ describe "Proposal", type: :system do
   let!(:author) { create :user, :confirmed, organization: organization }
   let!(:user) { create :user, :confirmed, organization: organization }
   let(:participatory_process) { create(:participatory_process, :with_steps, organization: organization) }
+  let(:title) { "More sidewalks and less roads" }
+  let(:body) { "Cities need more people, not more cars" }
   let!(:component) do
     create(:proposal_component,
            :with_creation_enabled,
@@ -17,12 +19,14 @@ describe "Proposal", type: :system do
            manifest: manifest,
            participatory_space: participatory_process,
            organization: organization)
+end
   let(:component_path) { Decidim::EngineRouter.main_proxy(component) }
 
   context "when creating a new collaborative draft" do
     before do
       login_as user, scope: :user
-      visit_component + "/collaborative_drafts/"
+      visit_component
+      click_link "Access collaborative drafts"
       click_link "New collaborative draft"
     end
 
@@ -37,8 +41,8 @@ describe "Proposal", type: :system do
 
       it "fill in title and body" do
         within ".card__content form" do
-          fill_in :proposal_title, with: proposal_title
-          fill_in :proposal_body, with: proposal_body
+          fill_in :collaborative_draft_title, with: title
+          fill_in :collaborative_draft_body, with: body
           find("*[type=submit]").click
         end
       end
@@ -49,8 +53,8 @@ describe "Proposal", type: :system do
         end
 
         it "redirects to proposals_path" do
-          expect(page).to have_content("PROPOSALS")
-          expect(page).to have_content("New proposal")
+          expect(page).to have_content("COLLABORATIVE DRAFTS")
+          expect(page).to have_content("New collaborative draft")
         end
       end
     end
@@ -58,13 +62,10 @@ describe "Proposal", type: :system do
     context "when in step_2: Compare" do
       context "with similar results" do
         before do
-          create(:proposal, title: "More sidewalks and less roads", body: "Cities need more people, not more cars", component: component)
-          create(:proposal, title: "More sidewalks and less roadways", body: "Green is always better", component: component)
-          visit_component
-          click_link "New proposal"
+          create(:collaborative_draft, title: title, component: component)
           within ".new_proposal" do
-            fill_in :proposal_title, with: proposal_title
-            fill_in :proposal_body, with: proposal_body
+            fill_in :collaborative_draft_title, with: title
+            fill_in :collaborative_draft_body, with: body
 
             find("*[type=submit]").click
           end
@@ -79,9 +80,9 @@ describe "Proposal", type: :system do
         end
 
         it "shows similar proposals" do
-          expect(page).to have_content("SIMILAR PROPOSALS (2)")
-          expect(page).to have_css(".card--proposal", text: "More sidewalks and less roads")
-          expect(page).to have_css(".card--proposal", count: 2)
+          expect(page).to have_content("SIMILAR COLLABORATIVE DRAFTS (1)")
+          expect(page).to have_css(".card--proposal", text: title)
+          expect(page).to have_css(".card--proposal", count: 1)
         end
 
         it "show continue button" do
@@ -98,8 +99,8 @@ describe "Proposal", type: :system do
           visit_component
           click_link "New proposal"
           within ".new_proposal" do
-            fill_in :proposal_title, with: proposal_title
-            fill_in :proposal_body, with: proposal_body
+            fill_in :title, with: title
+            fill_in :body, with: body
 
             find("*[type=submit]").click
           end
@@ -125,8 +126,8 @@ describe "Proposal", type: :system do
         visit_component
         click_link "New proposal"
         within ".new_proposal" do
-          fill_in :proposal_title, with: proposal_title
-          fill_in :proposal_body, with: proposal_body
+          fill_in :title, with: title
+          fill_in :body, with: body
 
           find("*[type=submit]").click
         end
@@ -141,8 +142,8 @@ describe "Proposal", type: :system do
       end
 
       it "show form and submit button" do
-        expect(page).to have_field("Title", with: proposal_title)
-        expect(page).to have_field("Body", with: proposal_body)
+        expect(page).to have_field("Title", with: title)
+        expect(page).to have_field("Body", with: body)
         expect(page).to have_button("Preview")
       end
 
@@ -168,7 +169,7 @@ describe "Proposal", type: :system do
 
       context "when the back button is clicked" do
         before do
-          create(:proposal, title: proposal_title, component: component)
+          create(:proposal, title: title, component: component)
           click_link "Back"
         end
 
@@ -179,7 +180,7 @@ describe "Proposal", type: :system do
     end
 
     context "when in step_4: Publish" do
-      let!(:proposal_draft) { create(:proposal, :draft, users: [user], component: component, title: proposal_title, body: proposal_body) }
+      let!(:proposal_draft) { create(:proposal, :draft, users: [user], component: component, title: title, body: body) }
 
       before do
         visit component_path.preview_proposal_path(proposal_draft)
@@ -194,9 +195,9 @@ describe "Proposal", type: :system do
       end
 
       it "shows a preview" do
-        expect(page).to have_content(proposal_title)
+        expect(page).to have_content(title)
         expect(page).to have_content(user.name)
-        expect(page).to have_content(proposal_body)
+        expect(page).to have_content(body)
       end
 
       it "shows a publish button" do
